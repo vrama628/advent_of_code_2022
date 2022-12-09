@@ -15,5 +15,7 @@
   day07
   day07pt2
   day08
-  day08pt2)
+  day08pt2
+  day09
+  day09pt2)
  (libraries core))
