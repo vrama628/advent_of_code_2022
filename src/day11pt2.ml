@@ -62,30 +62,38 @@ let rec parse_monkeys () : monkey list =
 
 let () =
   let monkeys = parse_monkeys () |> Array.of_list in
-  let activity = Array.map monkeys ~f:(Fn.const 0) in
-  Fn.apply_n_times
-    ~n:1000
-    (fun () ->
-      printf ".%!";
-      Array.iteri
-        monkeys
-        ~f:(fun i { items; operation; test; if_true; if_false } ->
-          activity.(i) <- activity.(i) + Queue.length items;
-          Queue.iter items ~f:(fun item ->
-              let item = operation item in
-              Queue.enqueue
-                monkeys.(if test item then
-                           if_true
-                         else
-                           if_false)
-                  .items
-                item
-          );
-          Queue.clear items
-      )
-    )
-    ();
-  Array.sort activity ~compare:Int.compare;
+  let activity = Array.map monkeys ~f:(Fn.const Z.zero) in
+  ignore
+    (Fn.apply_n_times
+       ~n:1000
+       (fun iteration ->
+         printf "\r%d%!" iteration;
+         Array.iteri
+           monkeys
+           ~f:(fun i { items; operation; test; if_true; if_false } ->
+             printf ".%!";
+             activity.(i) <- Z.add activity.(i) (Z.of_int (Queue.length items));
+             Queue.iter items ~f:(fun item ->
+                 let item = Z.(operation item mod Z.of_int 9699690) in
+                 Queue.enqueue
+                   monkeys.(if test item then
+                              if_true
+                            else
+                              if_false)
+                     .items
+                   item
+             );
+             Queue.clear items
+         );
+         iteration + 1
+       )
+       1
+    );
+  Array.sort activity ~compare:Z.compare;
   printf
-    "%d\n"
-    (activity.(Array.length activity - 1) * activity.(Array.length activity - 2))
+    "\n\n%s\n"
+    (Z.mul
+       activity.(Array.length activity - 1)
+       activity.(Array.length activity - 2)
+    |> Z.to_string
+    )
