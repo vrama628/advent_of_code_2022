@@ -19,5 +19,7 @@
   day09
   day09pt2
   day10
-  day10pt2)
- (libraries core))
+  day10pt2
+  day11
+  day11pt2)
+ (libraries core zarith))
