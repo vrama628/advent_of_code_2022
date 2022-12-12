@@ -65,7 +65,7 @@ let () =
   let activity = Array.map monkeys ~f:(Fn.const Z.zero) in
   ignore
     (Fn.apply_n_times
-       ~n:1000
+       ~n:10000
        (fun iteration ->
          printf "\r%d%!" iteration;
          Array.iteri
@@ -89,6 +89,9 @@ let () =
        )
        1
     );
+  Array.iteri activity ~f:(fun i activity ->
+      printf "%d\t%s\n" i (Z.to_string activity)
+  );
   Array.sort activity ~compare:Z.compare;
   printf
     "\n\n%s\n"
