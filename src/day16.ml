@@ -48,14 +48,8 @@ let () =
           acc + ((Map.find_exn valves key).rate * (30 - data))
       )
     else
-      let report_progress =
-        if time < 10 then
-          printf "%s%s\n%!" (String.init time ~f:(Fn.const ' '))
-        else
-          ignore
-      in
       let alpha =
-        if Map.mem opened_at valve then
+        if Map.mem opened_at valve || (Map.find_exn valves valve).rate = 0 then
           alpha
         else
           max
@@ -71,7 +65,6 @@ let () =
       (Map.find_exn valves valve).tunnels
       |> List.permute
       |> List.fold ~init:alpha ~f:(fun alpha next_valve ->
-             report_progress next_valve;
              max
                alpha
                (travel
@@ -84,5 +77,5 @@ let () =
          )
   in
   printf
-    "\n%d\n"
+    "%d\n"
     (travel "AA" 0 (Map.empty (module String)) (Map.empty (module String)) 0)
