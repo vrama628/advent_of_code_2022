@@ -41,8 +41,14 @@ let () =
            )
          )
   in
-  let travel travel ((valve, time), open_valves) =
-    if time >= 30 then
+  let rec travel valve time open_valves last_seen =
+    if
+      time >= 30
+      || Option.equal
+           StringSet.equal
+           (Map.find last_seen valve)
+           (Some open_valves)
+    then
       0
     else
       let log =
@@ -54,7 +60,11 @@ let () =
       let max_if_dont_open =
         List.map (Map.find_exn valves valve).tunnels ~f:(fun next_valve ->
             log next_valve;
-            travel ((next_valve, time + 1), open_valves)
+            travel
+              next_valve
+              (time + 1)
+              open_valves
+              (Map.set last_seen ~key:valve ~data:open_valves)
         )
         |> List.max_elt ~compare
         |> Option.value_exn
@@ -64,9 +74,8 @@ let () =
       else
         max
           (((Map.find_exn valves valve).rate * (30 - (time + 1)))
-          + travel ((valve, time + 1), StringSet.add open_valves valve)
+          + travel valve (time + 1) (StringSet.add open_valves valve) last_seen
           )
           max_if_dont_open
   in
-  let travel = Memo.recursive ~hashable:Hashable.hashable travel in
-  printf "%d\n" (travel (("AA", 0), StringSet.empty))
+  printf "%d\n" (travel "AA" 0 StringSet.empty (Map.empty (module String)))
