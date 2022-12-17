@@ -41,15 +41,25 @@ let () =
            )
          )
   in
-  let travel travel valve time open_valves last_seen =
+  let rec travel valve time opened_at last_seen alpha =
     if
       time >= 30
       || Option.equal
-           StringSet.equal
+           Set.equal
            (Map.find last_seen valve)
-           (Some open_valves)
+           (Some (Map.key_set opened_at))
+      || alpha
+         > Map.fold valves ~init:0 ~f:(fun ~key ~data acc ->
+               acc
+               + (30
+                 - (Map.find opened_at key |> Option.value ~default:(time + 1))
+                 )
+                 * data.rate
+           )
     then
-      0
+      Map.fold opened_at ~init:0 ~f:(fun ~key ~data acc ->
+          acc + ((Map.find_exn valves key).rate * (30 - data))
+      )
     else
       let log =
         if time <= 10 then
@@ -58,34 +68,33 @@ let () =
           ignore
       in
       let max_if_dont_open =
-        List.map (Map.find_exn valves valve).tunnels ~f:(fun next_valve ->
-            log next_valve;
-            travel
-              next_valve
-              (time + 1)
-              open_valves
-              (Map.set last_seen ~key:valve ~data:open_valves)
-        )
-        |> List.max_elt ~compare
-        |> Option.value_exn
+        (Map.find_exn valves valve).tunnels
+        |> List.fold ~init:alpha ~f:(fun alpha next_valve ->
+               log next_valve;
+               max
+                 alpha
+                 (travel
+                    next_valve
+                    (time + 1)
+                    opened_at
+                    (Map.set last_seen ~key:valve ~data:(Map.key_set opened_at))
+                    alpha
+                 )
+           )
       in
-      if StringSet.mem open_valves valve then
+      if Map.mem opened_at valve then
         max_if_dont_open
       else
         max
-          (((Map.find_exn valves valve).rate * (30 - (time + 1)))
-          + travel valve (time + 1) (StringSet.add open_valves valve) last_seen
+          (travel
+             valve
+             (time + 1)
+             (Map.add_exn opened_at ~key:valve ~data:(time + 1))
+             last_seen
+             max_if_dont_open
           )
           max_if_dont_open
   in
-  let memo_table = Hashable.Table.create () in
-  let rec memo_travel valve time open_valves last_seen =
-    let key = (valve, time), open_valves in
-    match Hashable.Table.find memo_table key with
-    | Some res -> res
-    | None ->
-      let data = travel memo_travel valve time open_valves last_seen in
-      Hashable.Table.add_exn memo_table ~key ~data;
-      data
-  in
-  printf "%d\n" (memo_travel "AA" 0 StringSet.empty (Map.empty (module String)))
+  printf
+    "%d\n"
+    (travel "AA" 0 (Map.empty (module String)) (Map.empty (module String)) 0)
