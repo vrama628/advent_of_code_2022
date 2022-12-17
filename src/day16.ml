@@ -41,7 +41,7 @@ let () =
            )
          )
   in
-  let rec travel valve time open_valves last_seen =
+  let travel travel valve time open_valves last_seen =
     if
       time >= 30
       || Option.equal
@@ -52,7 +52,7 @@ let () =
       0
     else
       let log =
-        if time <= 3 then
+        if time <= 10 then
           printf "%s%s\n%!" (String.init time ~f:(Fn.const '\t'))
         else
           ignore
@@ -78,4 +78,14 @@ let () =
           )
           max_if_dont_open
   in
-  printf "%d\n" (travel "AA" 0 StringSet.empty (Map.empty (module String)))
+  let memo_table = Hashable.Table.create () in
+  let rec memo_travel valve time open_valves last_seen =
+    let key = (valve, time), open_valves in
+    match Hashable.Table.find memo_table key with
+    | Some res -> res
+    | None ->
+      let data = travel memo_travel valve time open_valves last_seen in
+      Hashable.Table.add_exn memo_table ~key ~data;
+      data
+  in
+  printf "%d\n" (memo_travel "AA" 0 StringSet.empty (Map.empty (module String)))
