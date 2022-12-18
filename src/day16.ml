@@ -32,9 +32,9 @@ let () =
     if
       time >= 30
       || Option.equal
-           Set.equal
+           ( = )
            (Map.find last_seen valve)
-           (Some (Map.key_set opened_at))
+           (Some (Map.length opened_at))
       || alpha
          >= Map.fold valves ~init:0 ~f:(fun ~key ~data acc ->
                 acc
@@ -48,6 +48,9 @@ let () =
           acc + ((Map.find_exn valves key).rate * (30 - data))
       )
     else
+      let last_seen =
+        Map.set last_seen ~key:valve ~data:(Map.length opened_at)
+      in
       let alpha =
         if Map.mem opened_at valve || (Map.find_exn valves valve).rate = 0 then
           alpha
@@ -65,15 +68,7 @@ let () =
       (Map.find_exn valves valve).tunnels
       |> List.permute
       |> List.fold ~init:alpha ~f:(fun alpha next_valve ->
-             max
-               alpha
-               (travel
-                  next_valve
-                  (time + 1)
-                  opened_at
-                  (Map.set last_seen ~key:valve ~data:(Map.key_set opened_at))
-                  alpha
-               )
+             max alpha (travel next_valve (time + 1) opened_at last_seen alpha)
          )
   in
   printf
