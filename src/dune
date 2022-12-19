@@ -33,5 +33,7 @@
   day16
   day16pt2
   day17
-  day17pt2)
+  day17pt2
+  day18
+  day18pt2)
  (libraries core zarith yojson))
