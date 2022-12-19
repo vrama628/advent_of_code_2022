@@ -28,46 +28,9 @@ let () =
            )
          )
   in
-  let rec travel
-      elven_valve
-      phant_valve
-      time
-      opened_at
-      elven_last_seen
-      phant_last_seen
-      alpha =
-    let num_opened = Map.length opened_at in
-    if
-      time >= 26
-      || List.equal String.equal (Map.keys opened_at) (Map.keys valves)
-      || Option.equal
-           ( = )
-           (Map.find elven_last_seen elven_valve)
-           (Some num_opened)
-      || Option.equal
-           ( = )
-           (Map.find phant_last_seen phant_valve)
-           (Some num_opened)
-      || Option.equal
-           ( = )
-           (Map.find phant_last_seen elven_valve)
-           (Some num_opened)
-         && Option.equal
-              ( = )
-              (Map.find elven_last_seen phant_valve)
-              (Some num_opened)
-      || alpha
-         >= Map.fold valves ~init:0 ~f:(fun ~key ~data acc ->
-                acc
-                + (26
-                  - (Map.find opened_at key |> Option.value ~default:(time + 1))
-                  )
-                  * data.rate
-            )
-    then
-      Map.fold opened_at ~init:0 ~f:(fun ~key ~data acc ->
-          acc + ((Map.find_exn valves key).rate * (26 - data))
-      )
+  let travel travel (elven_valve, phant_valve, time, opened) =
+    if time >= 26 || Set.length opened = Map.length valves then
+      0
     else
       let () =
         if time < 10 then
@@ -76,12 +39,6 @@ let () =
             (String.init time ~f:(Fn.const ' '))
             elven_valve
             phant_valve
-      in
-      let phant_last_seen =
-        Map.set phant_last_seen ~key:phant_valve ~data:(Map.length opened_at)
-      in
-      let elven_last_seen =
-        Map.set elven_last_seen ~key:elven_valve ~data:(Map.length opened_at)
       in
       let elven_moves =
         (Map.find_exn valves elven_valve).tunnels
@@ -93,7 +50,7 @@ let () =
       in
       let elven_choices =
         if
-          Map.mem opened_at elven_valve
+          Set.mem opened elven_valve
           || (Map.find_exn valves elven_valve).rate = 0
         then
           elven_moves
@@ -102,7 +59,7 @@ let () =
       in
       let phant_choices =
         if
-          Map.mem opened_at phant_valve
+          Set.mem opened phant_valve
           || (Map.find_exn valves phant_valve).rate = 0
         then
           phant_moves
@@ -121,29 +78,23 @@ let () =
            Fn.id
          )
       |> List.fold
-           ~init:alpha
-           ~f:(fun alpha ((elven_valve, elven_opens), (phant_valve, phant_opens))
+           ~init:0
+           ~f:(fun acc ((elven_valve, elven_opens), (phant_valve, phant_opens))
               ->
-             let opened_at =
-               List.fold
-                 (elven_opens @ phant_opens)
-                 ~init:opened_at
-                 ~f:(fun opened_at key ->
-                   Map.set opened_at ~key ~data:(time + 1)
-               )
+             let opens = elven_opens @ phant_opens in
+             let opened = List.fold opens ~init:opened ~f:Set.add in
+             let added_now =
+               List.sum
+                 (module Int)
+                 opens
+                 ~f:(fun valve ->
+                   (26 - (time + 1)) * (Map.find_exn valves valve).rate
+                 )
              in
              max
-               alpha
-               (travel
-                  elven_valve
-                  phant_valve
-                  (time + 1)
-                  opened_at
-                  elven_last_seen
-                  phant_last_seen
-                  alpha
-               )
+               acc
+               (travel (elven_valve, phant_valve, time + 1, opened) + added_now)
          )
   in
-  let empty = Map.empty (module String) in
-  printf "%d\n" (travel "AA" "AA" 0 empty empty empty 2265)
+  let travel = Memo.recursive ~hashable:Base.Hashable.poly travel in
+  printf "%d\n" (travel ("AA", "AA", 0, Set.empty (module String)))
