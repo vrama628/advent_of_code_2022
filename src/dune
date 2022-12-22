@@ -36,7 +36,9 @@
   day17pt2
   day18
   day18pt2
-  day19)
+  day19
+  day20
+  day20pt2)
  (libraries core zarith yojson)
  (preprocess
   (pps ppx_let)))
