@@ -40,7 +40,15 @@
   day20
   day20pt2
   day21
-  day21pt2)
+  day21pt2
+  day22
+  day22pt2)
  (libraries core zarith yojson)
  (preprocess
-  (pps ppx_let)))
+  (pps
+   ppx_let
+   ppx_deriving.ord
+   ppx_sexp_conv
+   ppx_enumerate
+   ppx_deriving.show
+   ppx_deriving.eq)))
