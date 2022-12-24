@@ -42,7 +42,9 @@
   day21
   day21pt2
   day22
-  day22pt2)
+  day22pt2
+  day23
+  day23pt2)
  (libraries core zarith yojson)
  (preprocess
   (pps
