@@ -46,7 +46,8 @@
   day23
   day23pt2
   day24
-  day24pt2)
+  day24pt2
+  day25)
  (libraries core zarith yojson)
  (preprocess
   (pps
