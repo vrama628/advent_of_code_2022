@@ -62,7 +62,7 @@ let rec cross a b =
     raise (Invalid_argument "parallel")
   | (X, x), (Y, y) -> Z, Bool.(x = y)
   | (Y, y), (Z, z) -> X, Bool.(y = z)
-  | (Z, z), (X, x) -> Z, Bool.(z = x)
+  | (Z, z), (X, x) -> Y, Bool.(z = x)
   | _ -> negate (cross b a)
 
 let rotation normal ((dim1, pol1) as dir1) ((dim2, pol2) as dir2) =

@@ -62,7 +62,7 @@ let evaluate blueprint =
       memo_table
       MemoKey.{ resources; time; ore_bots; clay_bots; obsidian_bots }
       ~default:(fun () ->
-        if time >= 24 then
+        if time >= 32 then
           0
         else
           let time = time + 1 in
@@ -120,7 +120,7 @@ let evaluate blueprint =
             (let resources = Cost.(resources - blueprint.Blueprint.geode) in
              if Cost.is_natural resources then
                Some
-                 (24
+                 (32
                  - time
                  + eval
                      ~resources:Cost.(resources + new_resources)
@@ -147,14 +147,14 @@ let evaluate blueprint =
 
 let () =
   In_channel.input_lines In_channel.stdin
+  |> Fn.flip List.take 3
   |> List.map ~f:(fun line ->
          Scanf.sscanf
            line
-           "Blueprint %d: Each ore robot costs %d ore. Each clay robot costs \
+           "Blueprint %_d: Each ore robot costs %d ore. Each clay robot costs \
             %d ore. Each obsidian robot costs %d ore and %d clay. Each geode \
             robot costs %d ore and %d obsidian."
            (fun
-             id
              ore_ore
              clay_ore
              obsidian_ore
@@ -162,17 +162,15 @@ let () =
              geode_ore
              geode_obsidian
            ->
-             ( id,
-               Blueprint.
-                 {
-                   ore = Cost.make ~ore:ore_ore ();
-                   clay = Cost.make ~ore:clay_ore ();
-                   obsidian = Cost.make ~ore:obsidian_ore ~clay:obsidian_clay ();
-                   geode = Cost.make ~ore:geode_ore ~obsidian:geode_obsidian ();
-                 } )
+             Blueprint.
+               {
+                 ore = Cost.make ~ore:ore_ore ();
+                 clay = Cost.make ~ore:clay_ore ();
+                 obsidian = Cost.make ~ore:obsidian_ore ~clay:obsidian_clay ();
+                 geode = Cost.make ~ore:geode_ore ~obsidian:geode_obsidian ();
+               }
          )
      )
-  |> List.map ~f:(Tuple2.map_snd ~f:evaluate)
-  |> List.map ~f:(Tuple2.uncurry ( * ))
-  |> List.fold ~init:0 ~f:( + )
+  |> List.map ~f:evaluate
+  |> List.fold ~init:1 ~f:( * )
   |> printf "\n%d\n"
