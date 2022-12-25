@@ -56,4 +56,5 @@
    ppx_sexp_conv
    ppx_enumerate
    ppx_deriving.show
-   ppx_deriving.eq)))
+   ppx_deriving.eq
+   ppx_hash)))

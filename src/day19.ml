@@ -6,6 +6,7 @@ module Cost = struct
     clay : int;
     obsidian : int;
   }
+  [@@deriving ord, sexp_of, hash]
 
   let make ?(ore = 0) ?(clay = 0) ?(obsidian = 0) () = { ore; clay; obsidian }
 
@@ -40,34 +41,27 @@ module Blueprint = struct
   }
 end
 
+module MemoKey = struct
+  type t = {
+    resources : Cost.t;
+    time : int;
+    ore_bots : int;
+    clay_bots : int;
+    obsidian_bots : int;
+  }
+  [@@deriving ord, sexp_of, hash]
+end
+
 let evaluate blueprint =
   printf "\nevaluating blueprint...\n%!";
-  let status = Array.create ~len:20 0 in
-  let report time =
-    if time < 20 then (
-      status.(time) <- status.(time) + 1;
-      printf
-        "\r%s%!"
-        (status |> Array.map ~f:string_of_int |> String.concat_array ~sep:" ")
-    )
-  in
-  let memo_table = Hashtbl.create (module String) in
+  let memo_table = Hashtbl.create (module MemoKey) in
   let rec eval ~resources ~time ~ore_bots ~clay_bots ~obsidian_bots =
-    let memo_key =
-      [
-        resources.Cost.ore;
-        resources.Cost.clay;
-        resources.Cost.obsidian;
-        time;
-        ore_bots;
-        clay_bots;
-        obsidian_bots;
-      ]
-      |> List.map ~f:string_of_int
-      |> String.concat ~sep:"|"
-    in
-    Hashtbl.find_or_add memo_table memo_key ~default:(fun () ->
-        report time;
+    if Float.(Random.float 1. < 0.00001) then
+      printf "\r%12d%!" (Hashtbl.length memo_table);
+    Hashtbl.find_or_add
+      memo_table
+      MemoKey.{ resources; time; ore_bots; clay_bots; obsidian_bots }
+      ~default:(fun () ->
         if time >= 24 then
           0
         else
@@ -131,7 +125,7 @@ let evaluate blueprint =
                      ~obsidian_bots:(obsidian_bots + new_obsidian_bots)
                  )
                )
-    )
+      )
   in
   eval
     ~resources:(Cost.make ())
